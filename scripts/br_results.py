@@ -95,6 +95,11 @@ def build(g):
             d = (from_caixa(x, g) if source == "caixa" else from_mirror(x, g)) if x else None
         if d is None:
             raise SystemExit(f"{g} {n} : concurso introuvable")
+        # Le numéro du concurso doit être celui demandé, et chaque concurso doit précéder le suivant dans le temps
+        if d["draw"] != n:
+            raise SystemExit(f"{g} : concurso {n} demandé, {d['draw']} reçu")
+        if out and d["date"] > out[-1]["date"]:
+            raise SystemExit(f"{g} {n} : date {d['date']} après celle du concurso {n + 1} ({out[-1]['date']})")
         check(g, d); out.append(d)
         if source == "caixa": time.sleep(1.2)
     # Recoupement avec le miroir sur les 3 derniers concursos (le miroir peut avoir un peu de retard)
@@ -105,7 +110,7 @@ def build(g):
             if not m or int(m.get("concurso", -1)) != d["draw"]:
                 continue
             md = from_mirror(m, g)
-            for k in ("date", "numbers", "payouts", "winners"):
+            for k in ("draw", "date", "numbers", "payouts", "winners"):
                 if md[k] != d[k]:
                     raise SystemExit(f"{g} {d['draw']} : Caixa et miroir divergent sur {k} : {d[k]} ≠ {md[k]}")
             agreed += 1
